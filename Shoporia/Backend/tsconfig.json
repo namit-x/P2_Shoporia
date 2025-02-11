@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+      "module": "ESNext",        // For ES Modules
+      "target": "ES6",           // Modern JavaScript output
+      "moduleResolution": "node", // For node-style resolution
+      "esModuleInterop": true,   // For compatibility with commonjs
+      "outDir": "../dist",        // Where compiled JS will go
+      "rootDir": "./src",        // Your source directory
+      "strict": true             // Recommended for type safety
+    },
+    "include": ["src"]           // Include TypeScript files in src folder
+  }
