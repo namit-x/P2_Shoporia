@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const CustomerSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   password: { type: String, required: true },
   phn_num: { type: String, unique: true },
@@ -10,9 +10,7 @@ const CustomerSchema = new mongoose.Schema({
     data: { type: Buffer, required: false }, // Handles binary photo data
     content_type: { type: String, required: false }
   },
-  total_orders: { type: Number, required: true },
-  customer_address: { type: String, required: true },
-  role: { type: String, required: true },
-});
+  role: { type: String, role: ['customer', 'admin'],required: true },
+}, {discriminatorKey: 'role'});
 
-export const Customer = mongoose.model('Customer', CustomerSchema);
+export const User = mongoose.model('User', userSchema);

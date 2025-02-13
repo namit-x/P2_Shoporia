@@ -13,12 +13,24 @@ interface data {
   phn_num: number,
   email: string,
   photo?: { p_name: string, data: Blob | File, content_type: string },
-  total_orders: number,
-  customer_address: string
+  role: string,
+}
+
+interface Cdata extends data {
+  total_products: number,
+  customer_address: string,
+}
+
+interface Adata extends data {
+  total_products: number,
+  warehouse_address: string,
 }
 
 interface loginData {
-
+  name: string,
+  password: string,
+  phn_num: string,
+  role: string,
 }
 
 interface AuthenticatedRequest extends Request {
@@ -30,7 +42,8 @@ export const signup = async (req: Request, res: Response) => {
   if (!req) {
     res.status(400).json({ message: "Request body not valid" });
   }
-  let userData: data = req.body;
+  req.body.role = 'customer';
+  let userData: Cdata = req.body;
   let exists = await Customer.findOne({ phn_num: userData.phn_num }).exec();
 
   let hashedPassword = await bcrypt.hash(userData.password, 10);
@@ -44,6 +57,7 @@ export const signup = async (req: Request, res: Response) => {
     const payload = {
       name: newUser.name,
       password: userPass,
+      role: newUser.role,
     }
     const secretKey = process.env.Secret_Key as string;
     const token = jwt.sign(payload, secretKey, { expiresIn: "1h" });
@@ -68,8 +82,9 @@ export const adminSignup = async (req: Request, res: Response) => {
   if (!req) {
     res.status(400).json({ message: "Request body not valid" });
   }
-  let adminData: data = req.body;
-  let exists = await Admin.findOne({ phn_num : adminData.phn_num }).exec();
+  let adminData: Adata = req.body;
+
+  let exists = await Admin.findOne({ phn_num: adminData.phn_num }).exec();
 
   let hashedPassword = await bcrypt.hash(adminData.password, 10);
   let adminPass = adminData.password;
@@ -120,15 +135,22 @@ const verifyToken = (req: AuthenticatedRequest, res: Response, next: NextFunctio
 // I didn't used the refresh tokens cause the access token will be stored into browser's cookies and also applied sameSite: "strict"
 
 export const login = async (req: Request, res: Response) => {
-  const data: data = req.body;
+  const data: loginData = req.body;
 
-  const exists = await Customer.findOne({ phn_num: data?.phn_num }).exec();
+  let Cexists;
+  if (data.role === 'customer') {
+    Cexists = await Customer.findOne({ phn_num: data?.phn_num }).exec();
+  }
+  else {
+    Cexists = await Admin.findOne({ phn_num: data?.phn_num }).exec();
+  }
 
-  if (exists === null) {
+  if (Cexists === null) {
     res.status(400).json({ message: "Account doesn't exists." });
   }
   else {
-    if (data.password === exists.password) {
+    const isMatch: Boolean = await bcrypt.compare(data.password, Cexists.password);
+    if (isMatch) {
       res.status(200).json({ message: "Login" });
     }
   }
