@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import connectDB from './Controllers/DBController';
 import { signup } from './Controllers/AuthControllers';
+import { adminSignup } from './Controllers/AuthControllers';
 
 const app = express();
 const port: number = 3000;
@@ -15,6 +16,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.post('/signup', signup);
+app.post('/adminSignup', adminSignup);
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${ port }`);
