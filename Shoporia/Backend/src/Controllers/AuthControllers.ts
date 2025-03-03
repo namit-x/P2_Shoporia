@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { Customer } from '../Models/Customer';
 import { Admin } from '../Models/Admin'
 import bcrypt from 'bcryptjs';
@@ -8,12 +8,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 interface data {
-  name: string,
+  name: { firstName: string, lastName: string }, //combine these fname and lname into a single name field on the frontend.
   password: string,
-  phn_num: number,
+  phone: number,
   email: string,
-  photo?: { p_name: string, data: Blob | File, content_type: string },
   role: string,
+  photo?: { p_name: string, data: Blob | File, content_type: string },
 }
 
 interface Cdata extends data {
@@ -26,132 +26,141 @@ interface Adata extends data {
   warehouse_address: string,
 }
 
+interface AuthRequest extends Request {
+  user?: any; // Adding a custom 'user' field
+}
+
 interface loginData {
-  name: string,
   password: string,
-  phn_num: string,
+  phone: string,
   role: string,
 }
 
-interface AuthenticatedRequest extends Request {
-  user?: string | JwtPayload;
-}
-
-export const signup = async (req: Request, res: Response) => {
-
+export const signup = async (req: Request, res: Response): Promise<void> => {
   if (!req) {
     res.status(400).json({ message: "Request body not valid" });
+    return;
   }
-  req.body.role = 'customer';
-  let userData: Cdata = req.body;
-  let exists = await Customer.findOne({ phn_num: userData.phn_num }).exec();
 
-  let hashedPassword = await bcrypt.hash(userData.password, 10);
-  let userPass = userData.password;
-  userData.password = hashedPassword;
+  if (req.body.role === 'customer') {
 
-  if (exists === null) {
-    let newUser = new Customer(userData);
-    await newUser.save();
-
-    const payload = {
-      name: newUser.name,
-      password: userPass,
-      role: newUser.role,
+    let userData: Cdata = req.body;
+    console.log("User Data recevied: ", userData)
+    let exists = await Customer.findOne({ phone: userData.phone })
+    
+    if (exists !== null) {
+      console.log("400 from customer column");
+      res.status(400).json({ message: "Entry already exists." });
+      return;
     }
-    const secretKey = process.env.Secret_Key as string;
-    const token = jwt.sign(payload, secretKey, { expiresIn: "1h" });
-    console.log(token);
+    else {
+      // Hash password before saving
+      // await Customer.deleteMany({});
+      userData.password = await bcrypt.hash(userData.password, 10);
 
-    res.cookie('AuthToken', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 3600000,
-      sameSite: "strict"
-    })
+      let newUser = new Customer(userData);
+      await newUser.save();
 
-    res.status(201).json({ message: "User Data saved." });
+      res.status(201).json({ message: "Operation Successful" });
+      return;
+    };
   }
-  else {
-    res.status(400).json({ message: "Entry already exists." });
-  }
-}
 
-export const adminSignup = async (req: Request, res: Response) => {
+  else if (req.body.role === 'admin') {
+    let userData: Adata = req.body;
+    let exists = await Admin.findOne({ phone: userData.phone }).exec();
 
-  if (!req) {
-    res.status(400).json({ message: "Request body not valid" });
-  }
-  let adminData: Adata = req.body;
-
-  let exists = await Admin.findOne({ phn_num: adminData.phn_num }).exec();
-
-  let hashedPassword = await bcrypt.hash(adminData.password, 10);
-  let adminPass = adminData.password;
-  adminData.password = hashedPassword;
-
-  if (exists === null) {
-    let newAdmin = new Admin(adminData);
-    await newAdmin.save();
-
-    const payload: JwtPayload = {
-      name: newAdmin.name,
-      password: adminPass,
+    if (exists !== null) {
+      console.log("400 from admin column");
+      res.status(400).json({ message: "Entry already exists." });
+      return;
     }
-    const secretKey = process.env.Secret_Key as string;
-    const token = jwt.sign(payload, secretKey, { expiresIn: "1h" });
+    else {
+      // Hash password before saving
+      // await Admin.deleteMany({});
+      userData.password = await bcrypt.hash(userData.password, 10);
 
-    // sending Authentication Token as a cookie only in the production environment.
-    res.cookie('AuthToken', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "Production",
-      sameSite: "strict",
-      maxAge: 3600000,
-    })
+      let newUser = new Admin(userData);
+      await newUser.save();
 
-    res.status(201).json({ message: "Admin Data saved." });
+      res.status(201).json({ message: "Operation Successful" });
+      return;
+    };
   }
-  else {
-    res.status(400).json({ message: "Entry already exists." });
-  }
-}
-
-// Middleware for authentication
-const verifyToken = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ error: "Token required" });
-
-  let secretKey = process.env.Secret_Key as string;
-
-  jwt.verify(token, secretKey, (err, decoded) => {
-    if (err) return res.status(403).json({ error: "Invalid token" });
-    req.user = decoded; // Attach user data to the request
-    next();
-  });
 };
+
+export const login = async (req: Request, res: Response) => {
+  const data: loginData = req.body;
+  console.log("data received: ", data);
+
+  let exists;
+  if (data.role === 'customer') {
+    exists = await Customer.findOne({ phone: data.phone }).exec();
+  }
+  else {
+    exists = await Admin.findOne({ phone: data.phone }).exec();
+  }
+  
+  if (exists === null) {
+    console.log(`Account doesn't exists: ${exists}`);
+    res.status(400).json({ message: "Account doesn't exists." });
+  }
+  else {
+    const isMatch: Boolean = await bcrypt.compare(data.password, exists.password);
+
+    if (isMatch) {
+      const payload = {
+        phone: data.phone,
+        role: data.role,
+      }
+      const secretKey = process.env.Secret_Key as string;
+      const token = jwt.sign(payload, secretKey, { expiresIn: "1h" });
+      // console.log(token);
+      
+      res.cookie('AuthToken', token, {
+        httpOnly: false,
+        secure: false, //change this to true in production.
+        maxAge: 3600000,
+        sameSite: "strict",
+      })
+      
+      // console.log("Cookies Set:", res.getHeaders()["set-cookie"]);
+      
+      res.status(201).json({ message: "Verified" });
+    }
+    else {
+      res.status(400).json({ message: "Not Authorized" });
+    }
+  }
+}
+
+export const homepage = async (req: AuthRequest, res: Response) => {
+  try {
+    if (req.user === null) {
+      res.status(200).json({ message: "Token unavailable" });
+      return;
+    }
+
+    let userData;
+    if(req.user.role === "customer") {
+      userData = await Customer.findOne({phone : req.user.phone});
+    }
+    if(req.user.role === "admin") {
+      userData = await Admin.findOne({phone : req.user.phone});
+    }
+
+    res.status(200).json({
+      message: "Welcome to the homepage!",
+      user: userData,
+    });
+  } catch (error) {
+    console.error("Homepage error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 
 // Work on JWT and Admin Login. ===> DONE
 // Use HttpOnly Cookies for Storing the Token. ===> DONE
 // I didn't used the refresh tokens cause the access token will be stored into browser's cookies and also applied sameSite: "strict"
-
-export const login = async (req: Request, res: Response) => {
-  const data: loginData = req.body;
-
-  let Cexists;
-  if (data.role === 'customer') {
-    Cexists = await Customer.findOne({ phn_num: data?.phn_num }).exec();
-  }
-  else {
-    Cexists = await Admin.findOne({ phn_num: data?.phn_num }).exec();
-  }
-
-  if (Cexists === null) {
-    res.status(400).json({ message: "Account doesn't exists." });
-  }
-  else {
-    const isMatch: Boolean = await bcrypt.compare(data.password, Cexists.password);
-    if (isMatch) {
-      res.status(200).json({ message: "Login" });
-    }
-  }
-}
