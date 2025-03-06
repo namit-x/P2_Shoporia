@@ -13,11 +13,9 @@ interface AuthenticatedRequest extends Request {
 export const verifyToken: RequestHandler = (req: Request, res: Response, next: NextFunction): void => {
 
   const token: string | undefined = req.cookies.AuthToken || req.headers.authorization?.split(" ")[1];
-  console.log(`Here the request is received and token says: ${token}`);
-  // console.log(`Token received: ${token}`);
 
-  if (!token) {
-    res.status(200).json({ error: "Token required" });
+  if (token === undefined) {
+    res.status(403).json({ error: "cookie not found" });
     return;
   }
 

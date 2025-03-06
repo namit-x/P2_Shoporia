@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const adminSchema = new mongoose.Schema({
+const retailerSchema = new mongoose.Schema({
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     password: { type: String, required: true },
@@ -16,5 +16,4 @@ const adminSchema = new mongoose.Schema({
     warehouse_address: { type: String, required: false }
 });
 
-export const Admin = mongoose.model('Admin', adminSchema);
-
+export const Retailer = mongoose.model('Retailer', retailerSchema);

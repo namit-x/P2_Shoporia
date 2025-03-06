@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { Customer } from '../Models/Customer';
-import { Admin } from '../Models/Admin'
+import { Retailer } from '../Models/Retailer';
 import bcrypt from 'bcryptjs';
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -47,7 +47,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     let userData: Cdata = req.body;
     console.log("User Data recevied: ", userData)
     let exists = await Customer.findOne({ phone: userData.phone })
-    
+
     if (exists !== null) {
       console.log("400 from customer column");
       res.status(400).json({ message: "Entry already exists." });
@@ -66,21 +66,21 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
     };
   }
 
-  else if (req.body.role === 'admin') {
+  else if (req.body.role === 'retailer') {
     let userData: Adata = req.body;
-    let exists = await Admin.findOne({ phone: userData.phone }).exec();
+    let exists = await Retailer.findOne({ phone: userData.phone }).exec();
 
     if (exists !== null) {
-      console.log("400 from admin column");
+      console.log("400 from retailer column");
       res.status(400).json({ message: "Entry already exists." });
       return;
     }
     else {
       // Hash password before saving
-      // await Admin.deleteMany({});
+      // await Retailer.deleteMany({});
       userData.password = await bcrypt.hash(userData.password, 10);
 
-      let newUser = new Admin(userData);
+      let newUser = new Retailer(userData);
       await newUser.save();
 
       res.status(201).json({ message: "Operation Successful" });
@@ -91,19 +91,20 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response) => {
   const data: loginData = req.body;
-  console.log("data received: ", data);
 
   let exists;
   if (data.role === 'customer') {
     exists = await Customer.findOne({ phone: data.phone }).exec();
   }
   else {
-    exists = await Admin.findOne({ phone: data.phone }).exec();
+    exists = await Retailer.findOne({ phone: data.phone }).exec();
   }
-  
+
   if (exists === null) {
     console.log(`Account doesn't exists: ${exists}`);
-    res.status(400).json({ message: "Account doesn't exists." });
+    res.status(400).json({
+      message: "Account doesn't exists.",
+    });
   }
   else {
     const isMatch: Boolean = await bcrypt.compare(data.password, exists.password);
@@ -115,18 +116,18 @@ export const login = async (req: Request, res: Response) => {
       }
       const secretKey = process.env.Secret_Key as string;
       const token = jwt.sign(payload, secretKey, { expiresIn: "1h" });
-      // console.log(token);
-      
+
       res.cookie('AuthToken', token, {
         httpOnly: false,
-        secure: false, //change this to true in production.
+        secure: false,
         maxAge: 3600000,
         sameSite: "strict",
       })
-      
-      // console.log("Cookies Set:", res.getHeaders()["set-cookie"]);
-      
-      res.status(201).json({ message: "Verified" });
+
+      res.status(201).json({
+        message: "Verified",
+        userData: exists,
+      });
     }
     else {
       res.status(400).json({ message: "Not Authorized" });
@@ -142,17 +143,14 @@ export const homepage = async (req: AuthRequest, res: Response) => {
     }
 
     let userData;
-    if(req.user.role === "customer") {
-      userData = await Customer.findOne({phone : req.user.phone});
+    if (req.user.role === "customer") {
+      userData = await Customer.findOne({ phone: req.user.phone });
     }
-    if(req.user.role === "admin") {
-      userData = await Admin.findOne({phone : req.user.phone});
+    if (req.user.role === "retailer") {
+      userData = await Retailer.findOne({ phone: req.user.phone });
     }
 
-    res.status(200).json({
-      message: "Welcome to the homepage!",
-      user: userData,
-    });
+    res.status(200);
   } catch (error) {
     console.error("Homepage error:", error);
     res.status(500).json({ message: "Server error" });
@@ -161,6 +159,6 @@ export const homepage = async (req: AuthRequest, res: Response) => {
 
 
 
-// Work on JWT and Admin Login. ===> DONE
+// Work on JWT and Retailer Login. ===> DONE
 // Use HttpOnly Cookies for Storing the Token. ===> DONE
 // I didn't used the refresh tokens cause the access token will be stored into browser's cookies and also applied sameSite: "strict"

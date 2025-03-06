@@ -1,31 +1,64 @@
-import { createSlice } from '@reduxjs/toolkit'
-import type { PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-export interface CounterState {
-  value: number
+interface Photo {
+  p_name: string;
+  data: string; // Base64 or URL
+  content_type: string;
 }
 
-const initialState: CounterState = {
-  value: 0,
+export interface User {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  role: string;
+  photo?: Photo;
+  total_orders?: number;
+  customer_address?: string;
+  password?: string;
+  total_products?: number;
+  warehouse_address?: string;
 }
 
-export const counterSlice = createSlice({
-  name: 'counter',
+const initialState: User = {
+  firstName: "",
+  lastName: "",
+  phone: "",
+  email: "",
+  role: "",
+  photo: { p_name: "", data: "", content_type: "" },
+  total_orders: 0,
+  customer_address: "",
+  password: "",
+  total_products: 0,
+  warehouse_address: "",
+};
+
+const userSlice = createSlice({
+  name: "user",
   initialState,
   reducers: {
-    increment: (state) => {
-      state.value += 1
+    setUser: (state, action: PayloadAction<User>) => {
+      Object.assign(state, action.payload);
+      if (state.customer_address) {
+        state.warehouse_address = undefined;
+      }
+      if (state.warehouse_address) {
+        state.customer_address = undefined;
+      }
     },
-    decrement: (state) => {
-      state.value -= 1
-    },
-    incrementByAmount: (state, action: PayloadAction<number>) => {
-      state.value += action.payload
+    updateUser: (state, action: PayloadAction<Partial<User>>) => {
+      const updatedState = { ...state, ...action.payload };
+      if (updatedState.customer_address) {
+        updatedState.warehouse_address = undefined;
+      }
+      if (updatedState.warehouse_address) {
+        updatedState.customer_address = undefined;
+      }
+      return updatedState;
     },
   },
-})
+});
 
-// Action creators are generated for each case reducer function
-export const { increment, decrement, incrementByAmount } = counterSlice.actions
-
-export default counterSlice.reducer
+export const { setUser, updateUser } = userSlice.actions;
+export default userSlice.reducer;

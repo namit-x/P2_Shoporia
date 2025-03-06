@@ -1,9 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Navbar from '../Components/Navbar';
 import Footer from '../Components/Footer';
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from '../redux/store';
+import { User, setUser } from '../redux/User/userSlice';
 
 const HomePage = () => {
+  const user: User = useSelector((state: RootState) => state.user as User);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const verify = async () => {
+      let res = await fetch('http://localhost:3000/details', {
+        method: 'GET',
+        credentials: 'include',
+      })
+      let response = await res.json();
+      dispatch(setUser(response.user as User));
+    }
+    if (user.phone === '') { verify(); }
+  }, []);
+
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const nextSlide = () => {

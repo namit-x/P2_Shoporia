@@ -4,6 +4,37 @@ import { LoginForm } from './LoginForm';
 import { LoginBranding } from './LoginBranding';
 import { MobileHeader } from './MobileHeader';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux'
+import { setUser, User } from '../../redux/User/userSlice';
+
+export interface Photo {
+  p_name: string;
+  data: string; // Base64 or URL
+  content_type: string;
+}
+
+export interface Customer {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  photo?: Photo;
+  total_orders?: number;
+  customer_address?: string;
+  role: string;
+}
+
+export interface Retailer {
+  firstName: string;
+  lastName: string;
+  password: string;
+  phone: string;
+  email: string;
+  role: string;
+  photo?: Photo; // Optional photo
+  total_products?: number;
+  warehouse_address?: string;
+}
 
 export const LoginPage = () => {
   const { toast } = useToast();
@@ -14,11 +45,16 @@ export const LoginPage = () => {
     password: '',
     role: '',
   });
+  const dispatch = useDispatch();
+
+  const storeData = async (Data: Customer | Retailer) => {
+    dispatch(setUser(Data as User));
+  }
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
-    console.log("Data sending: ", formData);
-    if(formData.role === "") {
+
+    if (formData.role === "") {
       formData.role = "customer";
       alert("You are trying to signed in as a customer? if not change your role.");
     }
@@ -32,7 +68,7 @@ export const LoginPage = () => {
     let response = await res.json();
 
     if (response.message === "Verified") {
-      console.log('Form submitted:', formData);
+      storeData(response.userData);
       toast(("Welcome back!"), {
         description: "You have successfully logged in.",
         duration: 4000,

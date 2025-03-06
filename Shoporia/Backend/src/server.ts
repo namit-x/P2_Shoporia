@@ -4,6 +4,7 @@ import connectDB from './Controllers/DBController';
 import { homepage, signup, login } from './Controllers/AuthControllers';
 import cookieParser from 'cookie-parser';
 import { verifyToken } from './Controllers/AuthMiddleware';
+import { details } from './Controllers/DetailsController';
 
 const app = express();
 const port: number = 3000;
@@ -23,8 +24,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 app.post('/signup', signup);
 app.post('/login', login);
-app.get('/homepage', verifyToken, homepage);
-// console.log("Request to verify token is sent.")
+app.get('/details', verifyToken, details);
 
 app.listen(port, () => {
     console.log(`Shoporia app listening on port ${port}`);
