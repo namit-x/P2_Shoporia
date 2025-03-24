@@ -10,7 +10,7 @@ dotenv.config();
 interface data {
   name: { firstName: string, lastName: string }, //combine these fname and lname into a single name field on the frontend.
   password: string,
-  phone: number,
+  phone: string,
   email: string,
   role: string,
   photo?: { p_name: string, data: Blob | File, content_type: string },
@@ -91,6 +91,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response) => {
   const data: loginData = req.body;
+  console.log("Data received: ", data);
 
   let exists;
   if (data.role === 'customer') {
@@ -120,7 +121,7 @@ export const login = async (req: Request, res: Response) => {
       res.cookie('AuthToken', token, {
         httpOnly: false,
         secure: false,
-        maxAge: 3600000,
+        maxAge: 15 * 24 * 60 * 60 * 1000,
         sameSite: "strict",
       })
 

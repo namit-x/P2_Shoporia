@@ -7,7 +7,7 @@ interface AuthRequest extends Request {
 }
 
 export const details = async (req: AuthRequest, res: Response) => {
-  console.log('Req has reached baby...');
+  // console.log('Req has reached baby...');
   try {
     if (req.user === null) {
       res.status(200).json({ message: "Token unavailable" });
@@ -22,8 +22,8 @@ export const details = async (req: AuthRequest, res: Response) => {
       userData = await Retailer.findOne({ phone: req.user.phone });
     }
 
-    console.log('details: ', userData);
-    console.log("Details sent.");
+    // console.log('details: ', userData);
+    // console.log("Details sent.");
     res.status(200).json({user: userData});
     return;
   } catch (error) {

@@ -1,26 +1,26 @@
-import { useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import HomePage from './Pages/HomePage';
 import SignupPage from './Pages/Signup';
-import LoginPage from './Pages/Login/Login';
-import ProfilePage from './Pages/Profile/ProfilePage';
+import LoginPage from './Pages/Login';
+import ProfilePage from './Pages/ProfilePage';
 import { Toaster } from 'sonner';
+import RetailerDashboard from './Pages/RetailerDashboard';
 
 function App() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
-  useEffect(() => {
-    const verify = async () => {
-      let res = await fetch('http://localhost:3000/details', {
-        method: 'GET',
-        credentials: 'include',
-      })
-      if (res.ok) {
-        navigate('/profile');
-      }
-    }
-    verify();
-  }, []);
+  // useEffect(() => {
+  //   const verify = async () => {
+  //     let res = await fetch('http://localhost:3000/details', {
+  //       method: 'GET',
+  //       credentials: 'include',
+  //     })
+  //     if (res.ok) {
+  //       navigate('/retailerDashboard');
+  //     }
+  //   }
+  //   verify();
+  // }, []);
 
   return (
     <>
@@ -30,6 +30,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<HomePage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/retailerDashboard" element={<RetailerDashboard />} />
       </Routes>
     </>
   );
